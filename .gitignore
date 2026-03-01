@@ -1,0 +1,32 @@
+# ── Python ─────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# ── Virtual Environment ───────────────
+venv/
+.env/
+.venv/
+
+# ── Environment Variables ─────────────
+.env
+
+# ── IDE / Editor ──────────────────────
+.vscode/
+.idea/
+
+# ── OS Files ──────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────
+*.log
+
+# ── Alembic cache ─────────────────────
+alembic/__pycache__/
+
+# ── SQLite (if used locally) ──────────
+*.db
+*.sqlite3
