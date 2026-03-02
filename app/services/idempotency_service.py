@@ -2,8 +2,14 @@
 import json
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select          # ← remove 'delete' from here
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from app.models.idempotency import IdempotencyRecord
+
+
+def _make_key(key: str, org_id: str) -> str:
+    """Prefix key with org_id so different orgs can use same key names"""
+    return f"{org_id}:{key}"
 
 
 async def get_idempotency_record(
@@ -12,9 +18,11 @@ async def get_idempotency_record(
     db: AsyncSession,
 ) -> dict | None:
     cutoff = datetime.utcnow() - timedelta(hours=24)
+    stored_key = _make_key(key, org_id)  # ← use prefixed key
+
     result = await db.execute(
         select(IdempotencyRecord).where(
-            IdempotencyRecord.idempotency_key == key,
+            IdempotencyRecord.idempotency_key == stored_key,
             IdempotencyRecord.organisation_id == org_id,
             IdempotencyRecord.created_at > cutoff,
         )
@@ -31,10 +39,15 @@ async def save_idempotency_record(
     response_body: dict,
     db: AsyncSession,
 ) -> None:
+    stored_key = _make_key(key, org_id)  
+
     record = IdempotencyRecord(
-        idempotency_key=key,
+        idempotency_key=stored_key,
         organisation_id=org_id,
         response_body=json.dumps(response_body),
     )
     db.add(record)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
