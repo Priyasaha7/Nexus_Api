@@ -35,12 +35,7 @@ async def get_redis_pool():
         from arq import create_pool
         from arq.connections import RedisSettings
         from app.config import settings
-
-        url = settings.REDIS_URL.replace("redis://", "").split(":")
-        host = url[0]
-        port = int(url[1]) if len(url) > 1 else 6379
-
-        return await create_pool(RedisSettings(host=host, port=port))
+        return await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
     except Exception:
         return None
 

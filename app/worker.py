@@ -15,15 +15,9 @@ from app.config import settings
 # ─────────────────────────────────────────────
 
 def get_redis_settings():
-    """
-    Parse REDIS_URL from settings.
-    Example: redis://localhost:6379
-    """
-    url = settings.REDIS_URL.replace("redis://", "")
-    parts = url.split(":")
-    host = parts[0]
-    port = int(parts[1]) if len(parts) > 1 else 6379
-    return RedisSettings(host=host, port=port)
+    """Parse REDIS_URL from settings — handles all formats including Railway"""
+    from arq.connections import RedisSettings
+    return RedisSettings.from_dsn(settings.REDIS_URL)
 
 
 # ─────────────────────────────────────────────
