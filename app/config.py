@@ -12,8 +12,9 @@ class Settings(BaseSettings):
     GOOGLE_REDIRECT_URI: str
 
     REDIS_URL: str = "redis://localhost:6379"
+    FRONTEND_URL: str = "http://localhost:3000"
     
-    FRONTEND_URL: str = "http://localhost:3000"  # ← ADD THIS LINE
+    DEBUG: bool = False
 
     class Config:
         env_file = ".env"
