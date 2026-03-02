@@ -10,7 +10,7 @@ from app.database import get_db
 from app.models.user import User
 from app.config import settings
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 async def get_current_user(
     request: Request,
@@ -18,6 +18,18 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
+
+     # ── handle missing token ──
+    if credentials is None:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "error": "missing_token",
+                "message": "Authorization token is required.",
+                "request_id": request_id,
+            }
+        )
+
     token = credentials.credentials
 
     # decode and validate JWT
