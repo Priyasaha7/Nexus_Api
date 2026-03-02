@@ -69,4 +69,5 @@ async def grant_credits_endpoint(
         "transaction_id": str(transaction.id),
         "amount_added": body.amount,
         "new_balance": new_balance,
+        "request_id": str(request.state.request_id) if hasattr(request.state, "request_id") else None,
     }
