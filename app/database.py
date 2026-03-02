@@ -5,8 +5,8 @@ from app.config import settings
 
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=True,  # logs SQL queries — turn off in production
-    pool_pre_ping=True,  # checks connection health before using it
+    echo=settings.DEBUG,          # ← use settings.DEBUG instead of os.getenv
+    pool_pre_ping=True,
 )
 
 AsyncSessionLocal = async_sessionmaker(
