@@ -7,31 +7,52 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi.responses import JSONResponse
 
-
 logger = logging.getLogger(__name__)
 
 
-# ── Rate limiting strategy: enforce limits per organisation (org_id) instead of per IP ──
 def get_org_id(request: Request) -> str:
     if hasattr(request.state, "organisation_id"):
         return str(request.state.organisation_id)
     return get_remote_address(request)
 
 
-# ── Initialize Redis-backed rate limiter (gracefully degrades if Redis is unavailable) ──
+def get_org_rate_key(request: Request) -> str:
+    """Single shared bucket across ALL product endpoints per org"""
+    if hasattr(request.state, "organisation_id"):
+        return f"product:{request.state.organisation_id}"
+    return f"product:{get_remote_address(request)}"
+
+
+def _get_redis_uri() -> str:
+    """Read Redis URL from settings — never hardcode"""
+    from app.config import settings
+    return settings.REDIS_URL
+
+
+# general limiter
 try:
     limiter = Limiter(
         key_func=get_org_id,
-        storage_uri="redis://localhost:6379",
+        storage_uri=_get_redis_uri(),
         strategy="fixed-window",
     )
-    logger.info("Rate limiter using Redis storage.")
 except Exception as e:
-    logger.warning(f"Redis unavailable for rate limiting. Failing open. Error: {e}")
+    logger.warning(f"Redis unavailable for limiter. Failing open. Error: {e}")
     limiter = Limiter(key_func=get_org_id)
 
 
-# ── Custom exception handler to return structured response when rate limit is exceeded ──
+# product endpoints shared limiter — 60/min COMBINED across /analyse + /summarise
+try:
+    product_limiter = Limiter(
+        key_func=get_org_rate_key,
+        storage_uri=_get_redis_uri(),
+        strategy="fixed-window",
+    )
+except Exception as e:
+    logger.warning(f"Redis unavailable for product_limiter. Failing open. Error: {e}")
+    product_limiter = Limiter(key_func=get_org_rate_key)
+
+
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
     retry_after = getattr(exc, "retry_after", 60)
