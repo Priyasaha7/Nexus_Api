@@ -505,7 +505,7 @@ The system handles all failure scenarios explicitly with correct HTTP status cod
 
 This API is deployed on [Railway](https://railway.app) (or Render/Fly.io).
 
-**Live URL:** `https://your-deployed-url.up.railway.app`
+**Live URL:** `https://web-production-9d4b6.up.railway.app`
 
 **To deploy your own instance:**
 
